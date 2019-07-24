@@ -1,0 +1,156 @@
+---
+title: "Introduction to calm"
+author: "Kun Liang"
+date: "`r Sys.Date()`"
+output: 
+    rmarkdown::html_vignette:
+        toc: true
+bibliography: calm.bib
+vignette: >
+    %\VignetteIndexEntry{Userguide for calm package}
+    %\VignetteEngine{knitr::rmarkdown}
+    \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Multiple testing procedures are commonly used in the analyses of genomic data, 
+where thousands of tests are conducted simultaneously. As in many other 
+scientific research areas, new knowledge is discovered on the top of existing 
+ones, which can appear as various auxiliary/contextual information. Calm is an 
+R package for multiple testing methods with auxiliary covariate information.
+
+The auxiliary information is almost ubiquitous in scientific research. In 
+genomic experiments, each test corresponds to a genetic entity, such as a gene 
+or single nucleotide polymorphisms (SNP). Suppose that we try to find which 
+genes are differentially expressed between two conditions (e.g., 
+disease status). Each gene has many (physical) properties, such as the 
+location and length of its coding region. Furthermore, the summary statistics 
+from a related study (similar experimental condition or related disease) can 
+be highly informative. Calm provides the ability to perform the multiple 
+testing while utilizing the existing auxiliary covariate information to 
+improve power.
+
+
+
+## Conditional local FDR
+
+In multiple testing applications with covariate information, the ranking and 
+the significance of the test statistics become non-trivial. We will estimate 
+the conditional local FDR, which is the posterior probability of being null 
+given the test statistic and the covariate information.
+
+Consider the RNA sequencing (RNA-seq) study of psoriasis vulgaris disease 
+in @Jabbari12, where the expression levels of genes were measured on three 
+pairs of lesional and nonlesional skin samples collected from three patients. 
+The RNA-seq read count data can be obtained from the recount2 
+project [@Collado17] with accession number SRP016583.  We focus on the 
+18151 protein coding genes with at least one non-zero read from any patient. 
+To find the differentially expressed (DE) genes between lesional and 
+nonlesional skin samples, we compute $t$-statistics using the limma-voom 
+method [@Law14]. Then we could easily compute $p$-values from the 
+$t$-statistics and use the linear step-up procedure of @Benjamini95, 
+the BH procedure, to control the FDR at a certain target level.
+
+However, the signs of the $t$-statistics suggest whether the corresponding 
+genes are potentially up- or down-regulated, and the use of $p$-values 
+leads to loss of such directional information. For modeling convenience, we 
+work with $z$-values, which can be transformed from the $t$-statistics 
+as follows: ```z <- qnorm(pt(t,df))```, where ```df``` is the degrees 
+of freedom.
+
+Furthermore, scientific research is rarely done from scratch each time, 
+and it is almost always possible to find relevant information to improve 
+the power of the current study. In our psoriasis example, each hypothesis 
+is associated with a human gene, whose coding region has a certain length. 
+For each gene, the length of the coding region in the number of nucleotides 
+can also be obtained from the recount2 project. 
+
+```{r, echo=TRUE}
+library(calm)
+data("pso")
+dim(pso)
+head(pso)
+summary(pso$len_gene)
+hist(pso$len_gene, main="")
+```
+
+We can see that the longest gene is almost 119K nucleotides long and is far 
+longer than other genes. For this reason, we will use a normalized gene 
+length in later analyses to improve estimation stability.
+
+For any specific genetic study, there could be previous studies conducted 
+under similar experimental conditions or on related diseases.   
+@Gudjonsson10 used microarray to study the gene expression differences 
+between 58 pairs of lesional and nonlesional skin samples from psoriasis 
+patients. Among the 18151 genes measured in the psoriasis RNA-seq 
+study [@Jabbari12], only 16493 genes can be found in the microarray 
+study of @Gudjonsson10 due to the differences between the microarray 
+and RNA-seq platforms.
+
+```{r, echo=TRUE}
+# number of genes with matching microarray data
+sum(!is.na(pso$tval_mic))
+```
+
+Naturally, we divide the total of 18,151 genes into two groups: one group 
+contains the 16,493 genes with matching microarray data and another group 
+of 1,658 genes without matches. We will start from the smaller group of 
+1,658 genes with only the gene length covariate.
+
+```{r, echo=TRUE}
+# indicator for RNA-seq genes without matching microarray data
+ind.nm <- is.na(pso$tval_mic)
+x <- pso$len_gene[ind.nm]
+# normalize covariate
+x <- rank(x)/length(x)
+y <- pso$zval[ind.nm]
+names(y) <- row.names(pso)[ind.nm]
+
+fit.nm <- CLfdr(x=x, y=y)
+fit.nm$fdr[1:5]
+```
+
+Here we use the normalized ranks of ```len_gene``` as our covariate.  
+Similarly, we analyze the larger group of 16,493 genes with both microarray 
+$t$-statistic and gene length as covariates.
+
+```{r, echo=TRUE}
+# indicator for RNA-seq genes with matching microarray data
+ind.m <- !ind.nm
+# normalize covariate
+m <- sum(ind.m)
+x1 <- rank(pso$tval_mic[ind.m])/m
+x2 <- rank(pso$len_gene[ind.m])/m
+
+xmat <- cbind(x1, x2)
+colnames(xmat) <- c("tval", "len")
+y <- pso$zval[ind.m]
+names(y) <- row.names(pso)[ind.m]
+
+fit.m <- CLfdr(x=xmat, y=y, bw=c(0.028, 0.246, 0.253))
+```
+
+For time consideration, we specify the bandwidth here. Without the 
+explicit specification of the bandwidth, the ```CLfdr``` function will 
+find the optimal bandwidth, and it would take 20-30 minutes. Finally, 
+we combine the results from two groups.
+
+```{r, echo=TRUE}
+fdr <- c(fit.m$fdr, fit.nm$fdr)
+FDR <- EstFDR(fdr)
+o <- order(FDR)
+FDR[o][1:5]
+sum(FDR<0.01)
+```
+
+## Session Information
+```{r, echo=TRUE}
+sessionInfo()
+```
+
+## References
