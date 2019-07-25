@@ -2,7 +2,11 @@ Package: calm
 Type: Package
 Title: Covariate Assisted Large-scale Multiple testing
 Version: 0.99.0
-Description: Statistical methods for multiple testing with covariate information.
+Description: Statistical methods for multiple testing with covariate information. 
+    Traditional multiple testing methods only consider a list of test statistics, 
+    such as p-values. Our methods incorporate the auxiliary information, 
+    such as the lengths of gene coding regions or the minor allele frequencies 
+    of SNPs, to improve power.
 Authors@R: person("Kun", "Liang", email = "kun.liang@uwaterloo.ca", role = c("aut", "cre"))
 License: GPL (>=2)
 Encoding: UTF-8
