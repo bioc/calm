@@ -10,7 +10,7 @@ Description: Statistical methods for multiple testing with covariate information
 Authors@R: person("Kun", "Liang", email = "kun.liang@uwaterloo.ca", role = c("aut", "cre"))
 License: GPL (>=2)
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Imports: mgcv, stats, graphics
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr
@@ -18,3 +18,4 @@ biocViews: Bayesian, DifferentialExpression, GeneExpression,
         Regression, Microarray, Sequencing, RNASeq, MultipleComparison,
         Genetics, ImmunoOncology, Metabolomics, Proteomics, Transcriptomics
 RoxygenNote: 6.1.1
+BugReports: https://github.com/k22liang/calm/issues
