@@ -36,6 +36,13 @@ testing while utilizing the existing auxiliary covariate information to
 improve power.
 
 
+## Installation
+
+```{r, eval=FALSE}
+if(!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("calm")
+```
 
 ## Conditional local FDR
 
