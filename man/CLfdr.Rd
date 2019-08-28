@@ -5,8 +5,8 @@
 \title{Conditional local FDR (CLfdr)}
 \usage{
 CLfdr(x, y, pval = NULL, pi0.method = "RB", bw.init = NULL,
-  bw = NULL, reltol = 1e-04, n.subsample = NULL, check.gam = FALSE,
-  k.gam = NULL, info = TRUE)
+    bw = NULL, reltol = 1e-04, n.subsample = NULL, check.gam = FALSE,
+    k.gam = NULL, info = TRUE)
 }
 \arguments{
 \item{x}{covariates, could be a vector of length \emph{m} or a matrix
@@ -100,6 +100,15 @@ computation time.
 \examples{
 data(pso)
 ind.nm <- is.na(pso$tval_mic)
+x <- pso$len_gene[ind.nm]
+# normalize covariate
+x <- rank(x)/length(x)
+y <- pso$zval[ind.nm]
+# assign names to the z-values helps to give names to the output variables
+names(y) <- row.names(pso)[ind.nm]
+
+fit.nm <- CLfdr(x=x, y=y)
+fit.nm$fdr[1:5]
 }
 \references{
 Liang (2019), Empirical Bayes analysis of RNA sequencing
