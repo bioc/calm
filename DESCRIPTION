@@ -1,7 +1,7 @@
 Package: calm
 Type: Package
 Title: Covariate Assisted Large-scale Multiple testing
-Version: 1.14.0
+Version: 1.15.0
 Description: Statistical methods for multiple testing with covariate information. 
     Traditional multiple testing methods only consider a list of test statistics, 
     such as p-values. Our methods incorporate the auxiliary information, 
